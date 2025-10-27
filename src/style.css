@@ -13,6 +13,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Tailwind directives - enable Tailwind utility classes */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Asegurar que html y body ocupen todo el espacio */
+html, body, #app {
+  @apply min-h-screen w-full;
+  @apply m-0 p-0;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -59,9 +70,8 @@ button:focus-visible {
 }
 
 #app {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   text-align: center;
 }
 

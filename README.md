@@ -1,156 +1,78 @@
-# 🥂 Ecococteles — Plataforma de pedidos de cócteles
+# Ecococteles: tienda web de cócteles con pedido por correo
 
-Proyecto web modular para mostrar un catálogo de cócteles, agregar productos a un carrito y gestionar pedidos para confirmar contra entrega. El enfoque es limpio, escalable y pensado para implementar formularios de contacto y agendamiento sin pagos en línea.
+Catálogo de cócteles con carrito de compras y formulario de pedido. Al confirmar, un pequeño servidor Express envía el pedido por correo (SMTP) para coordinar la entrega y el pago contra entrega; no hay pagos en línea ni registro de usuarios.
 
----
+**Demo:** https://pagina-cocteles-lina.vercel.app
 
-## Objetivo del proyecto
+> La demo publica solo el frontend. El envío del pedido llama a `http://localhost:3000/api/send-order`, así que para probarlo de punta a punta hay que levantar el servidor localmente (ver [Cómo correrlo](#cómo-correrlo)).
 
-Crear una página web donde los usuarios puedan:
+## Qué hace
 
-- Ver un catálogo de cócteles disponibles.
-- Agregar productos al carrito de compras.
-- Enviar un formulario para agendar pedidos.
-- Confirmar la entrega mediante llamada o mensaje.
-- Visualizar todo en diseño responsive.
+- Muestra un catálogo de 6 cócteles con imagen, descripción y precio, definidos en `src/data/products.js`.
+- Permite agregar productos al carrito, cambiar cantidades, quitar productos y vaciarlo; el total se calcula en el store.
+- Conserva el carrito entre recargas de página guardándolo en `localStorage`.
+- Pide nombre, teléfono, correo y dirección de entrega, y valida el formato del correo y del teléfono (mínimo 10 dígitos) antes de enviar.
+- Envía el pedido a `POST /api/send-order`; el servidor arma el detalle (productos, cantidades, total) y lo manda por correo con Nodemailer.
+- Incluye secciones de inicio, visión y misión, y sobre nosotros, con diseño responsive y modo oscuro según el sistema.
 
-El sistema se construye para permitir futuro crecimiento (más categorías, reservas, componentes reutilizables).
+## Stack
 
----
+| Parte | Tecnología |
+| --- | --- |
+| Frontend | Vue 3.5 (`<script setup>`), Vite 7, Tailwind CSS 3.4, PostCSS + Autoprefixer |
+| Estado | Pinia 2.3 |
+| Servidor de correo | Node.js con Express 4.18, Nodemailer 6.9, cors y dotenv |
 
-## Arquitectura del proyecto
+Las versiones exactas están en [`package.json`](package.json).
 
-El proyecto utiliza una arquitectura modular basada en componentes para mantener orden y escalabilidad. La estructura actual es:
+## Estructura
+
 ```
-ecococteles/
-├─ .vscode/
-│ └─ extensions.json
-├─ node_modules/
-├─ public/
-│ └─ vite.svg
+├─ server/
+│  └─ index.js            # Express: GET /ping y POST /api/send-order (SMTP)
 ├─ src/
-│ ├─ assets/
-│ ├─ components/
-│ │ └─ HelloWorld.vue (u otros)
-│ ├─ App.vue
-│ ├─ main.js
-│ └─ style.css
-├─ .gitignore
-├─ index.html
-├─ package.json
-├─ package-lock.json
-├─ postcss.config.js
-├─ tailwind.config.js
-├─ vite.config.js
-└─ README.md
+│  ├─ App.vue             # Navegación, secciones de contenido y apertura del carrito
+│  ├─ components/
+│  │  ├─ ProductList.vue  # Grilla del catálogo
+│  │  ├─ ProductCard.vue  # Tarjeta de producto con botón "Agregar"
+│  │  ├─ Cart.vue         # Modal del carrito y formulario de pedido
+│  │  └─ CartItem.vue     # Fila del carrito con control de cantidad
+│  ├─ stores/cart.js      # Store de Pinia con persistencia en localStorage
+│  └─ data/products.js    # Catálogo de productos
+├─ docs/                  # Documentación ampliada
+└─ .env.example           # Variables SMTP necesarias para el servidor
 ```
 
----
+## Cómo correrlo
 
-## ✅ Funcionalidades planeadas
-
-✔ Catálogo de cócteles  
-✔ Carrito de compras  
-✔ Formularios para agendar pedidos  
-✔ Confirmación contra entrega  
-✔ Estilos con Tailwind CSS  
-✔ Diseño responsive  
-✔ Arquitectura modular
-
-*(No se incluirá registro de usuarios en esta versión.)*
-
----
-
-## 🛠️ Tecnologías usadas
-
-- **Vite** – entorno rápido de desarrollo  
-- **Vue.js** – estructura principal del frontend  
-- **Tailwind CSS** – estilos utilitarios  
-- **PostCSS + Autoprefixer** – procesamiento de estilos  
-- **JavaScript (ESM)** – lógica del frontend  
-- **HTML5 & CSS3** – base del proyecto
-
----
-
-## 📦 Instalación y ejecución
-
-Clonar el proyecto:
+Requisitos: Node.js y npm.
 
 ```bash
-git clone https://github.com/tu-usuario/ecococteles.git
-cd ecococteles
-
-Instalar dependencias:
-
 npm install
-
-
-Modo desarrollo:
-
-npm run dev
-
-
-Compilación para producción:
-
-npm run build
-
-
+cp .env.example .env      # completa los datos SMTP
+npm run server            # servidor de correo en http://localhost:3000
+npm run dev               # en otra terminal: frontend con Vite
 ```
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
- Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Otros comandos: `npm run build` (compilación de producción) y `npm run preview` (sirve la compilación).
+
+Variables del servidor (`.env`): `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_TO` (destinatario de los pedidos), `FROM_EMAIL` (opcional) y `PORT` (opcional, 3000 por defecto). Con Gmail y verificación en dos pasos, `SMTP_PASS` debe ser una contraseña de aplicación.
+
+Al iniciar, el servidor verifica la conexión SMTP y escribe en consola `SMTP transporter verified` o el motivo del fallo (credenciales, host o puerto incorrectos).
+
+## Decisiones técnicas
+
+- **El correo se envía desde el servidor, no desde el navegador.** Reemplaza un flujo anterior con `mailto:` que dependía del cliente de correo del usuario y mantiene las credenciales SMTP fuera del frontend.
+- **Pinia con persistencia manual en `localStorage`.** El store guarda el carrito tras cada cambio (clave `cocteles_cart_v1`), sin librerías adicionales.
+- **Catálogo como datos estáticos.** Los productos viven en un archivo JS, suficiente para un catálogo pequeño y fácil de reemplazar por una API más adelante.
+- **Validación en dos capas.** El formulario valida correo y teléfono; el servidor rechaza con `400` los pedidos sin nombre, correo o teléfono.
+
+## Documentación
+
+- [Arquitectura](docs/ARCHITECTURE.md): componentes, flujo de datos y sistema de pedidos.
+- [Componentes](docs/COMPONENTS.md): props, eventos y ejemplos de uso.
+- [Historia del desarrollo](docs/HISTORY.md): fases y decisiones del proyecto.
 
 ---
 
-## 📨 Envío automático de pedidos (SMTP local)
-
-Se añadió un pequeño servidor Node/Express que recibe las órdenes desde el frontend y envía un correo automáticamente usando Nodemailer (SMTP). Esto reemplaza el flujo anterior `mailto:` que abría el cliente de correo del usuario.
-
-Archivos clave:
-- `server/index.js` — endpoint POST `/api/send-order` que envía correos.
-- `.env.example` — ejemplo de variables de entorno necesarias.
-- `src/components/Cart.vue` — ahora hace `fetch` al endpoint para enviar la orden.
-
-Pasos para probar localmente
-1. Copia `.env.example` a `.env` y completa los valores SMTP:
-
-```
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=tu_correo@gmail.com
-SMTP_PASS=TU_APP_PASSWORD_O_CONTRASEÑA
-EMAIL_TO=destino@example.com
-FROM_EMAIL="Tu Nombre <tu_correo@gmail.com>"
-PORT=3000
-```
-
-2. Instala dependencias (si no lo hiciste):
-```powershell
-npm install
-```
-
-3. Inicia el servidor SMTP local (Express):
-```powershell
-npm run server
-```
-
-Verás en la consola un mensaje de verificación del transporter: `SMTP transporter verified` o un error que te indicará por qué falló la conexión (credenciales, bloqueo del proveedor, etc.).
-
-4. En otra terminal, inicia el frontend:
-```powershell
-npm run dev
-```
-
-5. Prueba la app: añade productos al carrito, abre el Checkout y pulsa "Enviar orden". Si todo está bien, el backend enviará el correo a `EMAIL_TO` y la UI mostrará una confirmación.
-
-Notas de seguridad y límites
-- No subas tu `.env` a repositorios públicos.
-- Para Gmail, si tienes 2FA debes crear una App Password y usarla en `SMTP_PASS`.
-- En producción es recomendable desplegar el endpoint en un servidor/función (Vercel, Render, etc.) y guardar credenciales en secretos.
-
-Problemas comunes
-- `SMTP transporter verification failed` o `535 Authentication failed`: credenciales incorrectas o bloqueo del proveedor; revisa `SMTP_USER`/`SMTP_PASS` y usa App Password si corresponde.
-- `ECONNECTION` o `ENOTFOUND`: revisa `SMTP_HOST`/`SMTP_PORT` y tu conexión a Internet.
-
-Si quieres que despliegue el endpoint como función serverless o que integre un proveedor como SendGrid, dime y lo preparo.
+Hecho por [Joan Mateo Cardona](https://github.com/JoanMateo77).
